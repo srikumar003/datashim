@@ -1,0 +1,10 @@
+apiVersion: datashim.io/v1alpha1
+kind: Dataset
+metadata:
+  name: model-weights
+spec:
+  local:
+    bucket: ${BUCKET_NAME}
+    endpoint: ${S3_PROVIDER_ENDPOINT}
+    secret-name: model-weights-secret 
+    type: COS
