@@ -22,33 +22,16 @@ spec:
         - "false"
         - "--port"
         - "8080"
+        - "--huggingface-hub-cache"
+        - "/tmp"
         - "--weights-cache-override"
         - "/mnt/datasets/model-weights/flan-t5-base"
       ports:
         - containerPort: 8080
           name: http
-      volumeMounts:
-        - name: scratch
-          mountPath: /data
-  volumes:
-    - name: scratch
-      persistentVolumeClaim:
-         claimName: scratch-pvc
   nodeSelector:
     nvidia.com/gpu.product: ${GPU_TYPE}
   restartPolicy: Never
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: scratch-pvc
-spec:
-  accessModes:
-  - ReadWriteOnce
-  storageClassName: nfs-to-gpfs
-  resources:
-    requests:
-      storage: 200Gi
 ---
 apiVersion: v1
 kind: Service
