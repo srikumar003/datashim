@@ -6,7 +6,9 @@ Large language models are the most interesting cloud workloads of the day. This 
 
 But first, let's define a Dataset that points to an S3 bucket. We will use the [FLAN-T5-Base model](https://huggingface.co/google/flan-t5-base) in this example. We will assume that the model has been downloaded to the bucket prior to this exercise. 
 
-Within our bucket `model-weights`, we have a sub-folder (or a prefix in S3 terms) called `flan-t5-base` where the model is stored. At the minimum, this should contain the weights of the model (e.g. `model.safetensors` which is the default format used by HuggingFace). Now, we define a `Dataset` object for this bucket as:
+## Populating the bucket
+
+In this example, we use a bucket called `model-weights` to store the weights of the model. Now, we define a `Dataset` object for this bucket as:
 
 ```yaml
 apiVersion: datashim.io/v1alpha1
@@ -28,6 +30,34 @@ $ kubectl create -f model-weights.yaml
 ```
 
 You can verify that the Dataset is created and working, and the corresponding PVC named `model_weights` has been created.
+
+The weights (e.g. `model.safetensors` which is the default format used by HuggingFace) should be downloaded into this bucket. Following is an example of Kubernetes Job that uses the dataset to download the weights for `google/flan-t5-base`: 
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download
+spec:
+  template:
+    metadata:
+      labels:
+        dataset.0.id: "model-weights"
+        dataset.0.useas: "mount"
+    spec:
+      containers:
+      - image: nicolaka/netshoot
+        command: ["/usr/bin/wget"]
+        args:
+          - "https://huggingface.co/google/flan-t5-base/resolve/main/model.safetensors?download=true"
+          - "-O"
+          - "/mnt/datasets/model-weights/model.safetensors"
+        imagePullPolicy: IfNotPresent
+        name: netshoot
+      restartPolicy: Never
+```
+
+## Creating the deployment
 
 Next, we create the TGI deployment
 ```yaml
@@ -58,7 +88,7 @@ spec:
         - "--huggingface-hub-cache"
         - "/tmp"
         - "--weights-cache-override"
-        - "/mnt/datasets/model-weights/flan-t5-base"
+        - "/mnt/datasets/model-weights"
       ports:
         - containerPort: 8080
           name: http
@@ -80,7 +110,7 @@ spec:
   type: ClusterIP
 ```
 
-The key lines are the labels starting with `dataset.0.` which define the `model_weights` dataset as an input to the TGI pod and the command arguments `"--weights-cache-override"` which indicates to TGI to load the model weights from a specific directory. In this example, the directory location points to the volume where the bucket will eventually be mounted (`/mnt/datasets/model_weights`) and the sub-directory (`flan-t5-base`) where the model weights will be found. 
+The key lines are the labels starting with `dataset.0.` which define the `model_weights` dataset as an input to the TGI pod and the command arguments `"--weights-cache-override"` which indicates to TGI to load the model weights from a specific directory. In this example, the directory location points to the volume where the bucket will eventually be mounted (`/mnt/datasets/model_weights`) and where the model weights will be found. 
 
 Another parameter to pay attention to is the `nodeSelector` that determines where the pod will be scheduled. As LLM inference requires GPUs, you will need a node with atleast one GPU available to run this example. Please consult your the documentation for your cloud provider to understand how to specify the `nodeSelector`.
 
@@ -108,6 +138,8 @@ If all goes well, you will see the following:
 2024-02-02T10:17:47.404081Z  INFO text_generation_launcher: Starting Webserver
 ```
 which indicates that the service has been set up successfully and is ready to reply to prompts.
+
+## Validating the deployment
 
 To test this, lets do the following:
 ```bash
