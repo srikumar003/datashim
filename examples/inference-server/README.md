@@ -4,7 +4,7 @@
 
 Large language models are the most interesting cloud workloads of the day. This example demonstrates reducing the friction of loading models from an S3 bucket using Datashim. For this example, we use the open-source [Text Generation Inference (TGI)](https://github.com/huggingface/text-generation-inference) from [HuggingFace](https://huggingface.co/) as the inference service that loads the models and makes it available for prompt inputs. 
 
-But first, let's define a Dataset that points to an S3 bucket. We will use the [FLAN-T5-Base model](https://huggingface.co/google/flan-t5-base) in this example. We will assume that the model has been downloaded to the bucket prior to this exercise. 
+But first, let's define a Dataset that points to an S3 bucket. We will use the [FLAN-T5-Base model](https://huggingface.co/google/flan-t5-base) in this example. 
 
 ## Populating the bucket
 
@@ -32,7 +32,7 @@ spec:
     type: COS
 ```
 
-where `S3_PROVIDER_ENDPOINT` is the URL for the provider, `BUCKET_NAME` is the bucket in which the weights are stored, and the secret is populated with our access credentials for our provider. Store the above to a file `model-weights.yaml`. Then, we create the dataset:
+where `S3_PROVIDER_ENDPOINT` is the URL for the provider, `BUCKET_NAME` is the bucket in which the weights are stored, and the secret `model-weights-secret` is populated with our access credentials for our provider. Store the above to a file `model-weights.yaml`. Then, we create the dataset:
 
 ```bash
 kubectl create -f model-weights.yaml -n <target_namespace>
@@ -41,7 +41,10 @@ kubectl create -f model-weights.yaml -n <target_namespace>
 where `target_namespace` is the namespace where we are creating our deployment. You can verify that the Dataset is created and working, and the corresponding PVC named `model_weights` has been created.
 
 > [!IMPORTANT]
-> Remember to label `target_namespace` with `monitor-pods-datasets=enabled` so that the pods obtain volumes automatically!
+> Remember to label `target_namespace` with `monitor-pods-datasets=enabled` so that the pods obtain volumes automatically, like so:! 
+> ```yaml
+> kubectl label ns <target_namespace> monitor-pods-datasets=enabled`
+> ```
 
 The weights (e.g. `model.safetensors` which is the default format used by HuggingFace) should be downloaded into this bucket. Following is an example of Kubernetes Job that uses the dataset to download the weights for `google/flan-t5-base`: 
 
