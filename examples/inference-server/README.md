@@ -41,9 +41,9 @@ kubectl create -f model-weights.yaml -n <target_namespace>
 where `target_namespace` is the namespace where we are creating our deployment. You can verify that the Dataset is created and working, and the corresponding PVC named `model_weights` has been created.
 
 > [!IMPORTANT]
-> Remember to label `target_namespace` with `monitor-pods-datasets=enabled` so that the pods obtain volumes automatically, like so:! 
+> Remember to label `target_namespace` with `monitor-pods-datasets=enabled` so that the pods obtain volumes automatically, like so: 
 > ```yaml
-> kubectl label ns <target_namespace> monitor-pods-datasets=enabled`
+> kubectl label ns <target_namespace> monitor-pods-datasets=enabled
 > ```
 
 The weights (e.g. `model.safetensors` which is the default format used by HuggingFace) should be downloaded into this bucket. Following is an example of Kubernetes Job that uses the dataset to download the weights for `google/flan-t5-base`: 
