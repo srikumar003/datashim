@@ -129,7 +129,7 @@ spec:
 
 The key lines are the labels starting with `dataset.0.` which define the `model_weights` dataset as an input to the TGI pod and the command arguments `"--weights-cache-override"` which indicates to TGI to load the model weights from a specific directory. In this example, the directory location points to the volume where the bucket will eventually be mounted (`/mnt/datasets/model_weights`) and where the model weights will be found. 
 
-Another parameter to pay attention to is the `nodeSelector` that determines where the pod will be scheduled. As LLM inference requires GPUs, you will need a node with atleast one GPU available to run this example. Please consult your the documentation for your cloud provider to understand how to specify the `nodeSelector`.
+Another parameter to pay attention to is the `nodeSelector` that determines where the pod will be scheduled. As LLM inference requires GPUs, you will need a node with atleast one GPU available to run this example. Please consult the documentation for your cloud provider to understand how to specify the `nodeSelector`.
 
 Populate and store the above file in `inference_service.yaml`. Then, create the pod by:
 ```bash
@@ -141,7 +141,7 @@ We can wait for the service to come up using the command:
 kubectl wait pod --for=condition=Ready text-generation-inference --timeout=-1s
 ```
 
-Monitor the pods by looking at the logs:
+We can also monitor the pods by looking at the logs:
 ```bash
 kubectl logs -f text-generation-inference 
 ```
