@@ -133,17 +133,17 @@ Another parameter to pay attention to is the `nodeSelector` that determines wher
 
 Populate and store the above file in `inference_service.yaml`. Then, create the pod by:
 ```bash
-kubectl create -f inference_service.yaml
+kubectl create -f inference_service.yaml -n <target_namespace>
 ```
 
 We can wait for the service to come up using the command:
 ```bash
-kubectl wait pod --for=condition=Ready text-generation-inference --timeout=-1s
+kubectl -n <target_namespace> wait pod --for=condition=Ready text-generation-inference --timeout=-1s
 ```
 
 We can also monitor the pods by looking at the logs:
 ```bash
-kubectl logs -f text-generation-inference 
+kubectl -n <target_namespace> logs -f text-generation-inference 
 ```
 
 If all goes well, you will see the following:
@@ -165,7 +165,7 @@ which indicates that the service has been set up successfully and is ready to re
 
 To test this, lets do the following:
 ```bash
-kubectl port-forward  --address localhost pod/text-generation-inference 8888:8080
+kubectl -n <target_namespace> port-forward  --address localhost pod/text-generation-inference 8888:8080
 ```
 
 ```bash
