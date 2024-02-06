@@ -11,25 +11,37 @@ But first, let's define a Dataset that points to an S3 bucket. We will use the [
 In this example, we use a bucket called `model-weights` to store the weights of the model. Now, we define a `Dataset` object for this bucket as:
 
 ```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: model-weights-secret
+stringData:
+  accessKeyID: "{ACCESS_KEY_ID}"
+  secretAccessKey: "{SECRET_ACCESS_KEY}"
+---
 apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: model-weights
 spec:
   local:
-    bucket: ${BUCKET_NAME}
-    endpoint: ${S3_PROVIDER_ENDPOINT}
+    bucket: {BUCKET_NAME}
+    endpoint: {S3_PROVIDER_ENDPOINT}
     secret-name: model-weights-secret
     type: COS
 ```
 
-where `S3_PROVIDER_ENDPOINT` is the URL for the provider and `BUCKET_NAME` is the bucket in which the weights are stored. Store the above to a file `model-weights.yaml`. Then, we create the dataset:
+where `S3_PROVIDER_ENDPOINT` is the URL for the provider, `BUCKET_NAME` is the bucket in which the weights are stored, and the secret is populated with our access credentials for our provider. Store the above to a file `model-weights.yaml`. Then, we create the dataset:
 
 ```bash
-$ kubectl create -f model-weights.yaml
+kubectl create -f model-weights.yaml -n <target_namespace>
 ```
 
-You can verify that the Dataset is created and working, and the corresponding PVC named `model_weights` has been created.
+where `target_namespace` is the namespace where we are creating our deployment. You can verify that the Dataset is created and working, and the corresponding PVC named `model_weights` has been created.
+
+> [!IMPORTANT]
+> Remember to label `target_namespace` with `monitor-pods-datasets=enabled` so that the pods obtain volumes automatically!
 
 The weights (e.g. `model.safetensors` which is the default format used by HuggingFace) should be downloaded into this bucket. Following is an example of Kubernetes Job that uses the dataset to download the weights for `google/flan-t5-base`: 
 
@@ -92,6 +104,11 @@ spec:
       ports:
         - containerPort: 8080
           name: http
+      readinessProbe:
+        tcpSocket:
+            port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
   nodeSelector:
     nvidia.com/gpu.product: ${GPU_TYPE}
   restartPolicy: Never
@@ -117,6 +134,11 @@ Another parameter to pay attention to is the `nodeSelector` that determines wher
 Populate and store the above file in `inference_service.yaml`. Then, create the pod by:
 ```bash
 kubectl create -f inference_service.yaml
+```
+
+We can wait for the service to come up using the command:
+```bash
+kubectl wait pod --for=condition=Ready text-generation-inference --timeout=-1s
 ```
 
 Monitor the pods by looking at the logs:
@@ -145,10 +167,11 @@ To test this, lets do the following:
 ```bash
 kubectl port-forward  --address localhost pod/text-generation-inference 8888:8080
 ```
+
 ```bash
  curl -s http://localhost:8888/generate -X POST -d '{"inputs":"The square root of x is the cube root of y. What is y to the power of 2, if x = 4?", "parameters":{"max_new_tokens":1000}}'  -H 'Content-Type: application/json' | jq -r .generated_text
 ```
 which should return the answer
 ```
-x = 4 * 2 = 8 x = 16 y = 16 to the power
+x = 4 * 2 = 8 x = 16 y = 16 to the power of 2
 ```
