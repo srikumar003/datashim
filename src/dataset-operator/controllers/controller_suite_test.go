@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	admissioncontroller "github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	testutils "github.com/datashim-io/datashim/src/dataset-operator/testing"
 	"github.com/kubernetes-csi/csi-test/v5/pkg/sanity"
@@ -28,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -226,7 +224,7 @@ var _ = BeforeSuite(func() {
 		}
 	}
 
-	initialiseWebhookInEnvironment()
+	//initialiseWebhookInEnvironment()
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -293,8 +291,10 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred(), "Could not set up Dataset Internal Reconciler")
 
-	webhookServer := k8sManager.GetWebhookServer()
-	webhookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &admissioncontroller.DatasetPodMutator{}})
+	/*
+		webhookServer := k8sManager.GetWebhookServer()
+		webhookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &admissioncontroller.DatasetPodMutator{}})
+	*/
 	go func() {
 		defer GinkgoRecover()
 		err = k8sManager.Start(ctx)
@@ -332,14 +332,13 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
-var _ = Describe("Test Dataset Creation", func() {
+var _ = Describe("Test HostPath Dataset Creation", func() {
 	var dataset datasetsv1alpha1.Dataset
 	datasetName := "test"
 	datasetNamespace := TEST_NS
 
 	BeforeEach(func() {
-
-		dataset = testutils.MakeDataset(datasetName, TEST_NS).ToS3Dataset("tests3", "https://", "secret", false).Obj()
+		dataset := testutils.MakeDataset(datasetName, TEST_NS).ToHostPathDataset("/tmp", false).Obj()
 		err := k8sClient.Create(context.Background(), &dataset, &client.CreateOptions{})
 		Expect(err).ShouldNot(HaveOccurred())
 	})

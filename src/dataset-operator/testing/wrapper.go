@@ -86,6 +86,23 @@ func (d *DatasetWrapper) ToS3Dataset(bucket, endpoint, secret string, readonly b
 	return d
 }
 
+func (d *DatasetWrapper) ToHostPathDataset(path string, create bool) *DatasetWrapper {
+	pathType := "Directory"
+	if create {
+		pathType = "CreateNew"
+	}
+
+	d.Spec = datasetsv1alpha1.DatasetSpec{
+		Local: map[string]string{
+			"type":         "HOST",
+			"path":         path,
+			"hostPathType": pathType,
+		},
+	}
+
+	return d
+}
+
 func (d *DatasetWrapper) Obj() datasetsv1alpha1.Dataset {
 	return d.Dataset
 }
