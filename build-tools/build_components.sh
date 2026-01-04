@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Build Datashim components (dataset-operator, generate-keys)
+# Requires: Docker/Podman with buildx support
+# Go Version: 1.25+ (defined in component Dockerfiles)
+#
 set -e
 
 print_usage() {

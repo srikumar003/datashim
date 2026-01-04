@@ -1,3 +1,5 @@
+# GitLab CI for CSI-S3
+# Requires: Go 1.25+ for building and testing
 image:
   name: ctrox/csi-s3:test
   entrypoint: [""]

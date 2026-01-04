@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Build Datashim CSI plugins (csi-s3, csi-driver-nfs)
+# Requires: Docker/Podman with buildx support
+# Go Version: 1.25+ (defined in CSI Dockerfiles)
+#
 set -e
 
 print_usage() {
